@@ -16,6 +16,7 @@ import (
 	"flag"
 	"hotel-room-bookme/api"
 	"hotel-room-bookme/db"
+	"hotel-room-bookme/middleware"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -43,19 +44,30 @@ func main() {
 
 	// handler initialization
 	var (
-		hotelStore = db.NewMongoHotelStore(client)
-		roomStore  = db.NewMongoRoomStore(client, hotelStore)
-		userStore  = db.NewMongoUserStore(client)
-		store      = &db.Store{
-			Hotel: hotelStore,
-			Room:  roomStore,
-			User:  userStore,
+		hotelStore   = db.NewMongoHotelStore(client)
+		roomStore    = db.NewMongoRoomStore(client, hotelStore)
+		userStore    = db.NewMongoUserStore(client)
+		bookingStore = db.NewMongoBookingStore(client)
+		store        = &db.Store{
+			Hotel:   hotelStore,
+			Room:    roomStore,
+			User:    userStore,
+			Booking: bookingStore,
 		}
-		userHandler  = api.NewUserHandler(userStore)
-		hotelHandler = api.NewHotelHandler(store)
-		app          = fiber.New(config)
-		appv1        = app.Group("/api/v1")
+
+		userHandler    = api.NewUserHandler(userStore)
+		hotelHandler   = api.NewHotelHandler(store)
+		authHandler    = api.NewAuthHandler(userStore)
+		roomHandler    = api.NewRoomHandler(store)
+		bookingHandler = api.NewBookingHandler(store)
+		app            = fiber.New(config)
+		auth           = app.Group("/api")
+		appv1          = app.Group("/api/v1", middleware.JWTAuthentication(userStore))
+		admin          = appv1.Group("/admin", middleware.AdminAuth)
 	)
+
+	//auth
+	auth.Post("/auth", authHandler.HandleAuthenticate)
 
 	// user handlers
 	appv1.Put("/user/:id", userHandler.HandlePutUser)
@@ -67,6 +79,19 @@ func main() {
 	appv1.Get("/hotel", hotelHandler.HandleGetHotels)
 	appv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
 	appv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
+
+	//room handlers
+	appv1.Get("room/", roomHandler.HandleGetRooms)
+	appv1.Post("/room/:id/book", roomHandler.HandleBookRoom)
+
+	//booking handlers
+
+	appv1.Get("/booking/:id", bookingHandler.HandleGetBooking)
+	// something to do - cancel a booking
+	appv1.Get("/booking/:id/cancel", bookingHandler.HandleCancelBooking)
+
+	// admin handlers
+	admin.Get("/booking", bookingHandler.HandleGetBookings)
 
 	app.Listen(*listenAddr)
 }

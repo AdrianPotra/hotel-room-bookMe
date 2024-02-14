@@ -18,6 +18,7 @@ type Dropper interface {
 
 type UserStore interface {
 	Dropper
+	GetUserByEmail(context.Context, string) (*types.User, error)
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
@@ -44,11 +45,7 @@ func (s *MongoUserStore) Drop(ctx context.Context) error {
 
 func (s *MongoUserStore) UpdateUser(ctx context.Context, filter bson.M, params types.UpdateUserParams) error {
 
-	update := bson.D{
-		{
-			"$set", params.ToBSON(),
-		},
-	}
+	update := bson.M{"$set": params}
 	_, err := s.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -90,6 +87,15 @@ func (s *MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 	return users, nil
 }
 
+func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+	// instantiatie a new user
+	var user types.User
+	if err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.User, error) {
 	// validate the correctness of the ID
 	oid, err := primitive.ObjectIDFromHex(id)
@@ -100,7 +106,9 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 	// instantiatie a new user
 	var user types.User
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
+		fmt.Println("cannot find user by id")
 		return nil, err
 	}
+	fmt.Println("user object from getUserById", user)
 	return &user, nil
 }

@@ -46,8 +46,8 @@ func (p UpdateUserParams) ToBSON() bson.M {
 type CreateUserParams struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	Email     string `json: "email"`
-	Password  string `json: "password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 }
 
 func (params CreateUserParams) Validate() map[string]string {
@@ -62,9 +62,15 @@ func (params CreateUserParams) Validate() map[string]string {
 		errors["password"] = fmt.Sprintf("password length should be at least %d characters", minPasswordLen)
 	}
 	if !isEmailValid(params.Email) {
-		errors["email"] = fmt.Sprintf("email is invalid")
+		errors["email"] = fmt.Sprintf("email %s is invalid", params.Email)
 	}
 	return errors
+}
+
+// compare passwords
+func IsValidPassword(encpw, pw string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(encpw), []byte(pw)) == nil
+
 }
 
 func isEmailValid(e string) bool {
@@ -74,11 +80,12 @@ func isEmailValid(e string) bool {
 
 // for the domain scope
 type User struct {
-	ID                primitive.ObjectID `bson: "_id,omitempty"  json:"id,omitempty"`
-	FirstName         string             `bson: "firstName"  json:"firstName"`
-	LastName          string             `bson: "lastName"  json:"lastName"`
-	Email             string             `bson: "email" json: "email"`
-	EncryptedPassword string             `bson: "EncryptedPassword" json: "-"`
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	FirstName         string             `bson:"firstName" json:"firstName"`
+	LastName          string             `bson:"lastName" json:"lastName"`
+	Email             string             `bson:"email" json:"email"`
+	EncryptedPassword string             `bson:"EncryptedPassword" json:"-"`
+	IsAdmin           bool               `bson:"isAdmin" json:"isAdmin"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {
