@@ -13,8 +13,11 @@ import (
 	"hotel-room-bookme/db/fixtures"
 	"hotel-room-bookme/types"
 	"log"
+	"math/rand"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -103,14 +106,23 @@ func seedBooking(userID, roomID primitive.ObjectID, from, till time.Time, nrPers
 
 func main() {
 
-	var err error
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+
+	var (
+		err           error
+		ctx           = context.Background()
+		mongoEndpoint = os.Getenv("MONGO_DB_URL")
+		mongoDBName   = os.Getenv("MONGO_DB_NAME")
+	)
 	//database connection
-	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoEndpoint))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := client.Database(db.DBNAME).Drop(ctx); err != nil {
+	if err := client.Database(mongoDBName).Drop(ctx); err != nil {
 		log.Fatal(err)
 	}
 
@@ -133,6 +145,12 @@ func main() {
 	fmt.Println("booking from fixtures: ", booking)
 	fmt.Println("booking ID from fixtures: ", booking.ID)
 
+	for i := 0; i < 51; i++ {
+		name := fmt.Sprintf("random hotel name %d", i)
+		location := fmt.Sprintf("location %d", i)
+		fixtures.AddHotel(store, name, location, rand.Intn(5)+1, nil)
+	}
+
 	hames := seedUser(false, "hames", "foo", "hames.foo@goo.com", "supersecurepassword")
 	seedUser(true, "admin", "admin", "admin@admin.com", "admin123")
 	h1 := seedHotel("Bellucia", "France", 3)
@@ -148,14 +166,23 @@ func main() {
 }
 
 func init() {
-	var err error
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+
+	var (
+		err           error
+		mongoEndpoint = os.Getenv("MONGO_DB_URL")
+		mongoDBName   = os.Getenv("MONGO_DB_NAME")
+	)
 	//database connection
-	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoEndpoint))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := client.Database(db.DBNAME).Drop(ctx); err != nil {
+	if err := client.Database(mongoDBName).Drop(ctx); err != nil {
 		log.Fatal(err)
 	}
 

@@ -2,7 +2,6 @@ package api
 
 import (
 	"hotel-room-bookme/db"
-	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,19 +22,16 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 	id := c.Params("id")
 	booking, err := h.store.Booking.GetBookingByID(c.Context(), id)
 	if err != nil {
-		return err
+		return ErrResourceNotFound("booking")
 	}
 
 	user, err := getAuthUser(c)
 	if err != nil {
-		return err
+		return ErrUnauthorized()
 	}
 
 	if booking.UserID != user.ID {
-		return c.Status(http.StatusUnauthorized).JSON(genericResp{
-			Type: "error",
-			Msg:  "not authorized",
-		})
+		return ErrUnauthorized()
 	}
 
 	if err := h.store.Booking.UpdateBooking(c.Context(), c.Params("id"), bson.M{"canceled": true}); err != nil {
@@ -48,7 +44,7 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 func (h *BookingHandler) HandleGetBookings(c *fiber.Ctx) error {
 	bookings, err := h.store.Booking.GetBookings(c.Context(), bson.M{})
 	if err != nil {
-		return err
+		return ErrResourceNotFound("bookings")
 	}
 
 	return c.JSON(bookings)
@@ -59,20 +55,17 @@ func (h *BookingHandler) HandleGetBooking(c *fiber.Ctx) error {
 	id := c.Params("id")
 	booking, err := h.store.Booking.GetBookingByID(c.Context(), id)
 	if err != nil {
-		return err
+		return ErrResourceNotFound("booking")
 	}
 
 	// now to do something that only user can see his bookings and no one else
 
 	user, err := getAuthUser(c)
 	if err != nil {
-		return err
+		return ErrUnauthorized()
 	}
 	if booking.UserID != user.ID {
-		return c.Status(http.StatusUnauthorized).JSON(genericResp{
-			Type: "error",
-			Msg:  "not authorized",
-		})
+		return ErrUnauthorized()
 	}
 	return c.JSON(booking)
 }
