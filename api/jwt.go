@@ -2,7 +2,7 @@
 Author: Adrian Potra
 Version 1.0.
 
-we are going to use jtw parse sample code from https://pkg.go.dev/github.com/golang-jwt/jwt/v5#example-Parse-Hmac
+going to use jtw parse sample code from https://pkg.go.dev/github.com/golang-jwt/jwt/v5#example-Parse-Hmac
 
 */
 

@@ -1,3 +1,9 @@
+/*
+Author: Adrian Potra
+Version 1.0.
+
+*/
+
 package types
 
 import (
