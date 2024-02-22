@@ -1,4 +1,4 @@
-# hotel-room-bookMe - WORK IN PROGRESS
+# hotel-room-bookMe - WORK IN PROGRESS (95 % of completion - initial project)
 
 ## Description 
 Hotel room booking backend reservation project
